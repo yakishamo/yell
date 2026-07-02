@@ -1,7 +1,7 @@
 TARGET   = yell
 
 CC       = gcc
-CFLAGS   = -Wall -Wextra -O2 -g
+CFLAGS   = -Wall -Wextra -O2 -g -Iinclude
 
 SRC_DIR  = src
 OBJ_DIR  = obj

@@ -1,12 +1,17 @@
 #include <stdio.h>
+#include <stdlib.h>
+
+#include "readline.h"
 
 int main() {
-  char input[100];
+  char *input;
   while(1) {
     printf("$ ");
-    if (fgets(input, sizeof(input), stdin) == NULL) {
+    if ((input = readline()) == NULL) {
       printf("\n");
       break;
     }
+    printf("%s", input);
+    free(input);
   }
 }
