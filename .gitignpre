@@ -1,0 +1,12 @@
+yell
+obj/
+*.o
+core
+core.*
+*.stackdump
+*.log
+.DS_Store
+.vscode/
+*.swp
+*~
+.idea/
