@@ -3,6 +3,7 @@
 
 typedef struct Token {
   char *value;
+  int size;
 } Token;
 
 typedef struct Command {
@@ -14,5 +15,6 @@ typedef struct Command {
 
 Command *parse_command(char *str);
 void free_command(Command *com);
+char *next_token(Command *com);
 
 #endif /* PARSE_H */

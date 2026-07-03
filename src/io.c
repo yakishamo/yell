@@ -3,6 +3,7 @@
 #include <string.h>
 
 #define READLINE_BUFSIZE 128
+#define FULLDIR_SIZE 128
 
 char *readline() {
   char *line = NULL ;
@@ -34,4 +35,8 @@ char *readline() {
     i++;
   }
   return line;
+}
+
+void print_prompt() {
+  char full_dir[FULLDIR_SIZE];
 }
