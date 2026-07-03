@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "readline.h"
+#include "parse.h"
 
 int main() {
   char *input;
@@ -11,7 +12,8 @@ int main() {
       printf("\n");
       break;
     }
-    printf("%s", input);
+    Command *com = parse_command(input);
+    free_command(com);
     free(input);
   }
 }
