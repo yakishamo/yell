@@ -19,7 +19,7 @@ int execute_command(Command *com) {
   pid_t pid = fork();
   if(pid == 0) {
     execvp(argv[0], argv);
-    perror("yell");
+    perror(argv[0]);
     exit(1);
   } else if(pid > 0) {
     wait(NULL);

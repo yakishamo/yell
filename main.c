@@ -10,13 +10,8 @@
 
 int main() {
   char *input;
-  char cur_dir[CURDIR_SIZE];
   while(1) {
-    if(!getcwd(cur_dir, CURDIR_SIZE)) {
-      printf("(getcwd failed) $ ");
-    } else {
-      printf("%s $ ", cur_dir);
-    }
+    print_prompt();
     if ((input = readline()) == NULL) {
       printf("interrupt\n");
       break;

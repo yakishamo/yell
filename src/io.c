@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define READLINE_BUFSIZE 128
-#define FULLDIR_SIZE 128
+#define DIRNAME_SIZE 128
 
 char *readline() {
   char *line = NULL ;
@@ -38,5 +39,17 @@ char *readline() {
 }
 
 void print_prompt() {
-  char full_dir[FULLDIR_SIZE];
+  char full_dir[DIRNAME_SIZE];
+  char *home_dir = getenv("HOME");
+  int home_len = strlen(home_dir);
+  if(!getcwd(full_dir, DIRNAME_SIZE) || !home_dir) {
+    printf("(getcwd failed)$ ");
+    return;
+  }
+  if(strncmp(full_dir, home_dir, home_len) == 0) {
+    printf("~%s $ ", full_dir + home_len);
+  } else {
+    printf("%s $ ", full_dir);
+  }
+  return;
 }
