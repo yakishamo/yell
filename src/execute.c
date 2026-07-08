@@ -33,8 +33,16 @@ int execute_command(Command *com) {
     i++;
   }
 
+  if(i == 0) {
+    return 0;
+  }
+
   if(strcmp(argv[0], "cd") == 0){ 
     return cd(argv[1]);
+  }
+
+  if(strcmp(argv[0], "exit") == 0) {
+    exit(0);
   }
 
   pid_t pid = fork();
