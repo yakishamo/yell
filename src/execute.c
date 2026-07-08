@@ -1,11 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
 #include "execute.h"
 #include "parse.h"
+
+static void reset_child_signal(void) {
+  struct sigaction sa;
+
+  sa.sa_handler = SIG_DFL;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  
+  if (sigaction(SIGINT, &sa, NULL) == -1) {
+    perror("sigaction");
+    exit(1);
+  }
+}
 
 int cd(char *path) {
   if(!path) {
@@ -46,12 +60,16 @@ int execute_command(Command *com) {
   }
 
   pid_t pid = fork();
-  if(pid == 0) {
+  if(pid == -1) {
+    perror("fork");
+  } else if(pid == 0) {
+    reset_child_signal();
     execvp(argv[0], argv);
     perror(argv[0]);
     exit(1);
   } else if(pid > 0) {
-    wait(NULL);
+    int status;
+    waitpid(pid, &status, 0);
   }
   return 0;
 }
