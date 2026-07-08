@@ -36,18 +36,10 @@ int cd(char *path) {
 }
 
 int execute_command(Command *com) {
-  char **argv = malloc(sizeof(char*) * com->size);
+  char **argv = com->argv;
+  char argc = com->argc;
 
-  int i = 0;
-  while(1) {
-    argv[i] = next_token(com);
-    if(!argv[i]) {
-      break;
-    }
-    i++;
-  }
-
-  if(i == 0) {
+  if(argc == 0) {
     return 0;
   }
 
