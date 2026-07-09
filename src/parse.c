@@ -107,6 +107,7 @@ Pipeline *parse(char *str) {
       continue;
     } else if (strcmp(tok, ">") == 0) {
       if(!(tok = strtok(NULL, TOK_DELIM))) {
+        fprintf(stderr, "yell: syntax error: expected filename after `>'\n");
         free_command(com);
         free_pipe(pl);
         return NULL;
@@ -115,6 +116,7 @@ Pipeline *parse(char *str) {
       com->append = 0;
     } else if(strcmp(tok, ">>") == 0) {
       if(!(tok = strtok(NULL, TOK_DELIM))) {
+        fprintf(stderr, "yell: syntax error: expected filename after `>>'\n");
         free_command(com);
         free_pipe(pl);
         return NULL;
@@ -123,6 +125,7 @@ Pipeline *parse(char *str) {
       com->append = 1;
     } else if(strcmp(tok, "<") == 0) {
       if(!(tok = strtok(NULL, TOK_DELIM))) {
+        fprintf(stderr, "yell: syntax error: expected filename after `<'\n");
         free_command(com);
         free_pipe(pl);
         return NULL;
