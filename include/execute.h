@@ -3,6 +3,6 @@
 
 #include "parse.h"
 
-int execute_command(Command *com);
+int execute_pipeline(Pipeline *pl);
 
 #endif /* EXECUTE_H */

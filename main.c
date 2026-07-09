@@ -34,7 +34,7 @@ int main() {
     }
 
     Pipeline *pl = parse(input);
-    execute_command(pl);
+    execute_pipeline(pl);
 
     free_pipe(pl);
     free(input);
