@@ -19,7 +19,7 @@ static void reset_child_signal(void) {
   
   if (sigaction(SIGINT, &sa, NULL) == -1) {
     perror("sigaction");
-    exit(1);
+    _exit(1);
   }
 }
 
@@ -59,13 +59,13 @@ void setup_redirection(Command *com) {
     int fd = open(com->infile, O_RDONLY);
     if(fd == -1) {
       perror(com->infile);
-      exit(1);
+      _exit(1);
     }
 
     if(dup2(fd, STDIN_FILENO) == -1) {
       perror("dup2");
       close(fd);
-      exit(1);
+      _exit(1);
     }
 
     close (fd);
@@ -82,13 +82,13 @@ void setup_redirection(Command *com) {
     int fd = open(com->outfile, flags, 0644);
     if(fd == -1) {
       perror(com->outfile);
-      exit(1);
+      _exit(1);
     }
 
     if(dup2(fd, STDOUT_FILENO) == -1) {
       perror("dup2");
       close(fd);
-      exit(1);
+      _exit(1);
     }
 
     close(fd);
@@ -97,7 +97,7 @@ void setup_redirection(Command *com) {
 
 int execute_command(Command *com) {
   char **argv = com->argv;
-  char argc = com->argc;
+  int argc = com->argc;
 
   if(argc == 0) {
     return 0;
@@ -116,9 +116,10 @@ int execute_command(Command *com) {
     perror("fork");
   } else if(pid == 0) {
     reset_child_signal();
+    setup_redirection(com);
     execvp(argv[0], argv);
     perror(argv[0]);
-    exit(1);
+    _exit(1);
   } else if(pid > 0) {
     int status;
     waitpid(pid, &status, 0);
@@ -127,6 +128,9 @@ int execute_command(Command *com) {
 }
 
 int execute_pipeline(Pipeline *pl) {
+  if(pl == NULL) {
+    return 1;
+  }
   if(validate_redirection(pl) != 0) {
     return 1;
   }
@@ -186,6 +190,9 @@ int execute_pipeline(Pipeline *pl) {
   for(int i = 0; i < ncoms; i++) {
     waitpid(pids[i], &status, 0);
   }
+
+  free(pipes);
+  free(pids);
 
   return status;
 }

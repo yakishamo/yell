@@ -67,6 +67,8 @@ void free_command(Command *com) {
   for(int i = 0; i < com->argc; i++) {
     free(com->argv[i]);
   }
+  free(com->infile);
+  free(com->outfile);
   free(com->argv);
   free(com);
 }
@@ -109,7 +111,7 @@ Pipeline *parse(char *str) {
         free_pipe(pl);
         return NULL;
       }
-      com->outfile = tok;
+      com->outfile = xstrdup(str);
       com->append = 0;
     } else if(strcmp(tok, ">>") == 0) {
       if(!(tok = strtok(NULL, TOK_DELIM))) {
@@ -117,7 +119,7 @@ Pipeline *parse(char *str) {
         free_pipe(pl);
         return NULL;
       }
-      com->outfile = tok;
+      com->outfile = xstrdup(str);
       com->append = 1;
     } else if(strcmp(tok, "<") == 0) {
       if(!(tok = strtok(NULL, TOK_DELIM))) {
@@ -125,14 +127,18 @@ Pipeline *parse(char *str) {
         free_pipe(pl);
         return NULL;
       }
-      com->infile = tok;
+      com->infile = xstrdup(str);
     } else {
       add_tok(com, tok);
     }
   }
   if(com->argc == 0) {
-    fprintf(stderr, "yell: syntax error near unexpected token `|'\n");
     free_command(com);
+    if(pl->size == 0) {
+      free_pipe(pl);
+      return NULL;
+    }
+    fprintf(stderr, "yell: syntax error near unexpected token `|'\n");
     free_pipe(pl);
     return NULL;
   }

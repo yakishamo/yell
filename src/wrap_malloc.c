@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "wrap_malloc.h"
 
@@ -20,3 +21,13 @@ void *xrealloc(void* ptr, size_t size) {
   }
   return p;
 }
+
+char *xstrdup(char *str) {
+  void *p = strdup(str);
+  if(!p) {
+    perror("strdup");
+    exit(3);
+  }
+  return p;
+}
+
