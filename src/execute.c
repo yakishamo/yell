@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include "execute.h"
 #include "parse.h"
@@ -36,6 +37,64 @@ int cd(char *path) {
   return 0;
 }
 
+static int validate_redirection(Pipeline *pl) {
+  for(int i = 0; i < pl->size; i++) {
+    Command *com = pl->coms[i];
+
+    if(com->infile != NULL && i != 0) {
+      fprintf(stderr,"yell: input redirection is allowed only for first command\n");
+      return -1;
+    }
+
+    if(com->outfile != NULL && i != pl->size - 1) {
+      fprintf(stderr, "yell: output redirection is allowed only for last command\n");
+      return -1;
+    }
+  }
+  return 0;
+}
+
+void setup_redirection(Command *com) {
+  if(com ->infile != NULL) {
+    int fd = open(com->infile, O_RDONLY);
+    if(fd == -1) {
+      perror(com->infile);
+      exit(1);
+    }
+
+    if(dup2(fd, STDIN_FILENO) == -1) {
+      perror("dup2");
+      close(fd);
+      exit(1);
+    }
+
+    close (fd);
+  }
+  if(com->outfile != NULL) {
+    int flags = O_WRONLY | O_CREAT;
+
+    if(com->append) {
+      flags |= O_APPEND;
+    } else {
+      flags |= O_TRUNC;
+    }
+
+    int fd = open(com->outfile, flags, 0644);
+    if(fd == -1) {
+      perror(com->outfile);
+      exit(1);
+    }
+
+    if(dup2(fd, STDOUT_FILENO) == -1) {
+      perror("dup2");
+      close(fd);
+      exit(1);
+    }
+
+    close(fd);
+  }
+} 
+
 int execute_command(Command *com) {
   char **argv = com->argv;
   char argc = com->argc;
@@ -67,10 +126,10 @@ int execute_command(Command *com) {
   return 0;
 }
 
-void setup_redirection(Command *com) {
-} 
-
 int execute_pipeline(Pipeline *pl) {
+  if(validate_redirection(pl) != 0) {
+    return 1;
+  }
   if(pl->size == 0) {
     return 0;
   } 

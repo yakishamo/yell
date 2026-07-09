@@ -91,7 +91,7 @@ Pipeline *parse(char *str) {
 
   char *tok = NULL;
   Command *com = init_command();
-  while(!(tok = strtok(str, TOK_DELIM))) {
+  while((tok = strtok(str, TOK_DELIM)) != NULL) {
     str = NULL;
     if(strcmp(tok, "|") == 0) {
       if(com->argc == 0) {
@@ -104,23 +104,23 @@ Pipeline *parse(char *str) {
       com = init_command();
       continue;
     } else if (strcmp(tok, ">") == 0) {
-      if(!(tok = strtok(str, TOK_DELIM))) {
+      if(!(tok = strtok(NULL, TOK_DELIM))) {
         free_command(com);
         free_pipe(pl);
         return NULL;
       }
       com->outfile = tok;
       com->append = 0;
-    } else if(strcmp(tok, ">>")) {
-      if(!(tok = strtok(str, TOK_DELIM))) {
+    } else if(strcmp(tok, ">>") == 0) {
+      if(!(tok = strtok(NULL, TOK_DELIM))) {
         free_command(com);
         free_pipe(pl);
         return NULL;
       }
       com->outfile = tok;
       com->append = 1;
-    } else if(strcmp(tok, "<")) {
-      if(!(tok = strtok(str, TOK_DELIM))) {
+    } else if(strcmp(tok, "<") == 0) {
+      if(!(tok = strtok(NULL, TOK_DELIM))) {
         free_command(com);
         free_pipe(pl);
         return NULL;
