@@ -175,7 +175,7 @@ int execute_pipeline(Pipeline *pl) {
 
       execvp(pl->coms[i]->argv[0], pl->coms[i]->argv);
       perror(pl->coms[i]->argv[0]);
-      exit(127);
+      _exit(127);
     }
     pids[i] = pid;
   }

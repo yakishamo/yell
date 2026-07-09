@@ -111,7 +111,7 @@ Pipeline *parse(char *str) {
         free_pipe(pl);
         return NULL;
       }
-      com->outfile = xstrdup(str);
+      com->outfile = xstrdup(tok);
       com->append = 0;
     } else if(strcmp(tok, ">>") == 0) {
       if(!(tok = strtok(NULL, TOK_DELIM))) {
@@ -119,7 +119,7 @@ Pipeline *parse(char *str) {
         free_pipe(pl);
         return NULL;
       }
-      com->outfile = xstrdup(str);
+      com->outfile = xstrdup(tok);
       com->append = 1;
     } else if(strcmp(tok, "<") == 0) {
       if(!(tok = strtok(NULL, TOK_DELIM))) {
@@ -127,7 +127,7 @@ Pipeline *parse(char *str) {
         free_pipe(pl);
         return NULL;
       }
-      com->infile = xstrdup(str);
+      com->infile = xstrdup(tok);
     } else {
       add_tok(com, tok);
     }
