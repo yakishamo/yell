@@ -28,10 +28,6 @@ static void extend_argv(Command *com) {
 }
 
 static void add_tok(Command *com, char *str) {
-  if(str == NULL) {
-    com->argv[com->argc] = NULL;
-    com->argc++;
-  } 
   if(com->argc == com->argv_capacity) {
     extend_argv(com);
   }
@@ -39,6 +35,7 @@ static void add_tok(Command *com, char *str) {
   com->argv[com->argc] = xmalloc(sizeof(char) * size);
   strcpy(com->argv[com->argc], str);
   com->argc++;
+  com->argv[com->argc] = NULL;
 }
 
 static Pipeline *init_pipe() {
@@ -74,14 +71,12 @@ Pipeline *parse(char *str) {
   while((tok = strtok(str, TOK_DELIM)) != NULL) {
     str = NULL;
     if(strcmp(tok, "|") == 0) {
-      add_tok(com, NULL);
       add_com(pl, com);
       com = init_command();
       continue;
     } 
     add_tok(com, tok);
   }
-  add_tok(com, NULL);
   add_com(pl, com);
 
   return pl;
