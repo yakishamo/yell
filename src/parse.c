@@ -91,7 +91,7 @@ Pipeline *parse(char *str) {
 
   char *tok = NULL;
   Command *com = init_command();
-  while((tok = strtok(str, TOK_DELIM)) != NULL) {
+  while(!(tok = strtok(str, TOK_DELIM))) {
     str = NULL;
     if(strcmp(tok, "|") == 0) {
       if(com->argc == 0) {
@@ -103,8 +103,32 @@ Pipeline *parse(char *str) {
       add_com(pl, com);
       com = init_command();
       continue;
-    } 
-    add_tok(com, tok);
+    } else if (strcmp(tok, ">") == 0) {
+      if(!(tok = strtok(str, TOK_DELIM))) {
+        free_command(com);
+        free_pipe(pl);
+        return NULL;
+      }
+      com->outfile = tok;
+      com->append = 0;
+    } else if(strcmp(tok, ">>")) {
+      if(!(tok = strtok(str, TOK_DELIM))) {
+        free_command(com);
+        free_pipe(pl);
+        return NULL;
+      }
+      com->outfile = tok;
+      com->append = 1;
+    } else if(strcmp(tok, "<")) {
+      if(!(tok = strtok(str, TOK_DELIM))) {
+        free_command(com);
+        free_pipe(pl);
+        return NULL;
+      }
+      com->infile = tok;
+    } else {
+      add_tok(com, tok);
+    }
   }
   if(com->argc == 0) {
     fprintf(stderr, "yell: syntax error near unexpected token `|'\n");
