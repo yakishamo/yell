@@ -13,6 +13,7 @@
 static Command *init_command() {
   Command *com = xmalloc(sizeof(Command));
   com->argv = xmalloc(sizeof(char*) * ARGV_SIZE);
+  com->argv[0] = NULL;
   com->argc = 0;
   com->argv_capacity = ARGV_SIZE;
   com->infile = NULL;
@@ -28,7 +29,7 @@ static void extend_argv(Command *com) {
 }
 
 static void add_tok(Command *com, char *str) {
-  if(com->argc == com->argv_capacity) {
+  if(com->argc + 1 == com->argv_capacity) {
     extend_argv(com);
   }
   int size = strlen(str) + 1;
