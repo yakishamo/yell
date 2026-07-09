@@ -3,64 +3,80 @@
 #include <stdio.h>
 
 #include "parse.h"
+#include "wrap_malloc.h"
 
 #define TOK_DELIM " \t\n"
 #define TOK_SIZE 32
 #define ARGV_SIZE 16
+#define PIPE_SIZE 8
 
-Command *parse_command(char *str) {
-  if(!str) {
-    return NULL;
-  }
-
-  Command *com = malloc(sizeof(Command));
-  if(!com) {
-    perror("malloc");
-    return NULL;
-  }
-
-  com->argv = malloc(sizeof(char*) * ARGV_SIZE);
-  if(!com->argv) {
-    perror("malloc");
-    return NULL;
-  }
+static Command *init_command() {
+  Command *com = xmalloc(sizeof(Command));
+  com->argv = xmalloc(sizeof(char*) * ARGV_SIZE);
   com->argc = 0;
   com->argv_capacity = ARGV_SIZE;
   com->infile = NULL;
   com->outfile = NULL;
   com->append = 0;
   
-  char *tok_str = strtok(str, TOK_DELIM);
-  if(tok_str == NULL) {
-    return com;
+  return com;
+}
+
+static void extend_argv(Command *com) {
+  com->argv_capacity += ARGV_SIZE;
+  com->argv = xrealloc(com->argv, com->argv_capacity);
+}
+
+static void add_tok(Command *com, char *str) {
+  if(com->argc == com->argv_capacity) {
+    extend_argv(com);
   }
-  com->argv[0] = malloc(sizeof(char) * (strlen(tok_str) + 1));
-  if(!com->argv[0]) {
-    perror("malloc");
-    free(com);
+  int size = strlen(str) + 1;
+  com->argv[com->argc] = xmalloc(sizeof(char) * size);
+  strcpy(com->argv[com->argc], str);
+  com->argc++;
+}
+
+static Pipeline *init_pipe() {
+  Pipeline *pl = xmalloc(sizeof(Pipeline));
+  pl->coms = xmalloc(sizeof(Command*) * PIPE_SIZE);
+  pl->size = 0;
+  pl->capacity = PIPE_SIZE;
+  return pl;
+}
+
+static void extend_pipe(Pipeline *pl) {
+  pl->capacity += PIPE_SIZE;
+  pl->coms = xrealloc(pl->coms, pl->capacity);
+}
+
+static void add_com(Pipeline *pl, Command *com) {
+  if(pl->size == pl->capacity) {
+    extend_pipe(pl);
+  }
+  pl->coms[pl->size] = com;
+  pl->size++;
+} 
+
+Pipeline *parse(char *str) {
+  if(!str) {
     return NULL;
   }
-  strcpy(com->argv[0], tok_str);
-  com->argc++;
 
-  while(1) {
-    for(int i = com->argc; i < com->argv_capacity; i++) {
-      tok_str = strtok(NULL, TOK_DELIM);
-      if(!tok_str) {
-        return com;
-      }
-      com->argv[i] = malloc(sizeof(char) * (strlen(tok_str) + 1));
-      strcpy(com->argv[i], tok_str);
-      com->argc++;
-    }
-    com->argv_capacity += TOK_SIZE;
-    void *tmp = realloc(com->argv, sizeof(char*) * com->argv_capacity);
-    if(!tmp) {
-      free_command(com);
-      return NULL;
-    }
-    com->argv = tmp;
+  Pipeline *pl = init_pipe();
+
+  char *tok = NULL;
+  Command *com = init_command();
+  while((tok = strtok(str, TOK_DELIM)) != NULL) {
+    if(strcmp(tok, "|") == 0) {
+      add_com(pl, com);
+      com = init_command();
+    } 
+    add_tok(com, tok);
   }
+
+  return pl;
+
 }
 
 void free_command(Command *com) {
@@ -72,4 +88,15 @@ void free_command(Command *com) {
   }
   free(com->argv);
   free(com);
+}
+
+void free_pipe(Pipeline *pl) {
+  if(!pl) {
+    return;
+  }
+  for(int i = 0; i < pl->size; i++) {
+    free_command(pl->coms[i]);
+  }
+  free(pl->coms);
+  free(pl);
 }

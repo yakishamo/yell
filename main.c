@@ -33,10 +33,10 @@ int main() {
       break;
     }
 
-    Command *com = parse_command(input);
-    execute_command(com);
+    Pipeline *pl = parse(input);
+    execute_command(pl);
 
-    free_command(com);
+    free_pipe(pl);
     free(input);
   }
 }
