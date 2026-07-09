@@ -24,10 +24,14 @@ static Command *init_command() {
 
 static void extend_argv(Command *com) {
   com->argv_capacity += ARGV_SIZE;
-  com->argv = xrealloc(com->argv, com->argv_capacity);
+  com->argv = xrealloc(com->argv, sizeof(char*) * com->argv_capacity);
 }
 
 static void add_tok(Command *com, char *str) {
+  if(str == NULL) {
+    com->argv[com->argc] = NULL;
+    com->argc++;
+  } 
   if(com->argc == com->argv_capacity) {
     extend_argv(com);
   }
@@ -47,7 +51,7 @@ static Pipeline *init_pipe() {
 
 static void extend_pipe(Pipeline *pl) {
   pl->capacity += PIPE_SIZE;
-  pl->coms = xrealloc(pl->coms, pl->capacity);
+  pl->coms = xrealloc(pl->coms, sizeof(Command*) * pl->capacity);
 }
 
 static void add_com(Pipeline *pl, Command *com) {
@@ -68,12 +72,17 @@ Pipeline *parse(char *str) {
   char *tok = NULL;
   Command *com = init_command();
   while((tok = strtok(str, TOK_DELIM)) != NULL) {
+    str = NULL;
     if(strcmp(tok, "|") == 0) {
+      add_tok(com, NULL);
       add_com(pl, com);
       com = init_command();
+      continue;
     } 
     add_tok(com, tok);
   }
+  add_tok(com, NULL);
+  add_com(pl, com);
 
   return pl;
 
