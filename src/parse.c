@@ -60,30 +60,6 @@ static void add_com(Pipeline *pl, Command *com) {
   pl->size++;
 } 
 
-Pipeline *parse(char *str) {
-  if(!str) {
-    return NULL;
-  }
-
-  Pipeline *pl = init_pipe();
-
-  char *tok = NULL;
-  Command *com = init_command();
-  while((tok = strtok(str, TOK_DELIM)) != NULL) {
-    str = NULL;
-    if(strcmp(tok, "|") == 0) {
-      add_com(pl, com);
-      com = init_command();
-      continue;
-    } 
-    add_tok(com, tok);
-  }
-  add_com(pl, com);
-
-  return pl;
-
-}
-
 void free_command(Command *com) {
   if(!com) {
     return;
@@ -104,4 +80,40 @@ void free_pipe(Pipeline *pl) {
   }
   free(pl->coms);
   free(pl);
+}
+
+Pipeline *parse(char *str) {
+  if(!str) {
+    return NULL;
+  }
+
+  Pipeline *pl = init_pipe();
+
+  char *tok = NULL;
+  Command *com = init_command();
+  while((tok = strtok(str, TOK_DELIM)) != NULL) {
+    str = NULL;
+    if(strcmp(tok, "|") == 0) {
+      if(com->argc == 0) {
+        fprintf(stderr, "yell: syntax error near unexpected token `|'\n");
+        free_command(com);
+        free_pipe(pl);
+        return NULL;
+      }
+      add_com(pl, com);
+      com = init_command();
+      continue;
+    } 
+    add_tok(com, tok);
+  }
+  if(com->argc == 0) {
+    fprintf(stderr, "yell: syntax error near unexpected token `|'\n");
+    free_command(com);
+    free_pipe(pl);
+    return NULL;
+  }
+  add_com(pl, com);
+
+  return pl;
+
 }

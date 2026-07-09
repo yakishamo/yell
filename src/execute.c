@@ -87,7 +87,7 @@ int execute_pipeline(Pipeline *pl) {
     }
   }
 
-  pid_t *pids = xmalloc(sizeof(pid_t*) * ncoms);
+  pid_t *pids = xmalloc(sizeof(pid_t) * ncoms);
   for(int i = 0; i < ncoms; i++) {
     pid_t pid = fork();
     if(pid == -1) {
@@ -102,7 +102,7 @@ int execute_pipeline(Pipeline *pl) {
         dup2(pipes[i - 1][0], STDIN_FILENO);
       } 
       if(i < ncoms - 1) {
-        dup2(pipes[i][0], STDOUT_FILENO);
+        dup2(pipes[i][1], STDOUT_FILENO);
       }
       for(int j = 0; j < ncoms-1; j++) {
         close(pipes[j][0]);

@@ -34,9 +34,11 @@ int main() {
     }
 
     Pipeline *pl = parse(input);
-    execute_pipeline(pl);
+    if(pl) {
+      execute_pipeline(pl);
+      free_pipe(pl);
+    }
 
-    free_pipe(pl);
     free(input);
   }
 }
