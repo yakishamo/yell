@@ -18,13 +18,13 @@ make
 - エラー処理
 
 ## テスト例
-ls
-echo hello
-echo hello > out
-cat < out
-echo hello | cat
-cat nonexistent
-echo hoge >
+ls  
+echo hello  
+echo hello > out  
+cat < out  
+echo hello | cat  
+cat nonexistent  
+echo hoge >  
 
 ## 工夫した点
 - fork後の子プロセスでは _exit() を使用し、親プロセス側の状態に影響を与えないようにした
