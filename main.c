@@ -33,6 +33,8 @@ int main() {
       break;
     }
 
+    add_history(input);
+
     Pipeline *pl = parse(input);
     if(pl) {
       execute_pipeline(pl);
@@ -41,4 +43,6 @@ int main() {
 
     free(input);
   }
+
+  close_history();
 }
