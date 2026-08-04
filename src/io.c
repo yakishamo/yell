@@ -2,17 +2,76 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <termios.h>
 
 #define READLINE_BUFSIZE 128
 #define DIRNAME_SIZE 128
 
-char *readline() {
+// handle line buffer and output
+int process_input(char c, char *line, int *i) {
+  switch(c) {
+    // EOF
+    case 0x04:
+      return 1;
+
+    // backspace
+    case 0x7f:
+      if(*i == 0) break;
+      write(STDOUT_FILENO, "\b \b", 3);
+      (*i)--;
+      line[*i] = '\0';
+      break;
+
+    default:
+      line[*i] = c;
+      (*i)++;
+      write(STDOUT_FILENO, &c, 1);
+      break;
+  } 
+  fflush(stdout);
+  return 0;
+} 
+
+char *read_line() {
   char *line = NULL;
   size_t line_size = 0;
-  if(getline(&line, &line_size, stdin) == -1) {
-    return NULL;
-  }
-  return line;
+  if(isatty(STDIN_FILENO)) {
+    struct termios original;
+    struct termios modified;
+
+    tcgetattr(STDIN_FILENO, &original);
+    modified = original;
+
+    modified.c_lflag &= ~ICANON;
+    modified.c_lflag &= ~ECHO;
+    modified.c_cc[VMIN] = 1;
+    modified.c_cc[VTIME] = 0;
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &modified);
+
+    char c;
+    int i = 0;
+    line = malloc(sizeof(char) * READLINE_BUFSIZE);
+    do {
+      if(read(STDIN_FILENO, &c, 1) != 1) {
+        break;
+      }
+      if(process_input(c, line, &i) == 1) {
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
+        free(line);
+        return NULL;
+      }
+    } while(c != '\n');
+    line[i] = '\0';
+
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
+    return line;
+
+  } else {
+    if(getline(&line, &line_size, stdin) == -1) {
+      return NULL;
+    }
+    return line;
+  } 
 }
 
 // print prompt with $HOME
@@ -29,6 +88,7 @@ void print_prompt() {
   } else {
     printf("%s $ ", full_dir);
   }
+  fflush(stdout);
   return;
 }
 

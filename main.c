@@ -28,7 +28,7 @@ int main() {
 
   while(1) {
     print_prompt();
-    if ((input = readline()) == NULL) {
+    if ((input = read_line()) == NULL) {
       printf("interrupt\n");
       break;
     }
