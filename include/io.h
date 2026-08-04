@@ -1,7 +1,7 @@
 #ifndef READLINE_H
 #define READLINE_H
 
-char *readline();
+char *read_line();
 void print_prompt();
 
 void add_history(char *str);

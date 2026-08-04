@@ -7,7 +7,17 @@
 #define READLINE_BUFSIZE 128
 #define DIRNAME_SIZE 128
 
-char *readline() {
+// handle line buffer and output
+void process_input(char c, char *line, int *i) {
+  line[*i] = c;
+  (*i)++;
+  if(write(STDOUT_FILENO, &c, 1) != 1) {
+    return;
+  } 
+  fflush(stdout);
+} 
+
+char *read_line() {
   char *line = NULL;
   size_t line_size = 0;
   if(isatty(STDIN_FILENO)) {
@@ -27,15 +37,10 @@ char *readline() {
     int i = 0;
     line = malloc(sizeof(char) * READLINE_BUFSIZE);
     do {
-      fflush(stdout);
       if(read(STDIN_FILENO, &c, 1) != 1) {
         break;
-      } 
-      line[i] = c;
-      i++;
-      if(write(STDOUT_FILENO, &c, 1) != 1) {
-        break;
-      } 
+      }
+      process_input(c, line, &i);
     } while(c != '\n');
     line[i] = '\0';
 
@@ -63,6 +68,7 @@ void print_prompt() {
   } else {
     printf("%s $ ", full_dir);
   }
+  fflush(stdout);
   return;
 }
 
