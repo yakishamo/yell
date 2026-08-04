@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <termios.h>
 
 #define READLINE_BUFSIZE 128
 #define DIRNAME_SIZE 128
@@ -9,9 +10,42 @@
 char *readline() {
   char *line = NULL;
   size_t line_size = 0;
-  if(getline(&line, &line_size, stdin) == -1) {
-    return NULL;
-  }
+  if(isatty(STDIN_FILENO)) {
+    struct termios original;
+    struct termios modified;
+
+    tcgetattr(STDIN_FILENO, &original);
+    modified = original;
+
+    modified.c_lflag &= ~ICANON;
+    modified.c_lflag &= ~ECHO;
+    modified.c_cc[VMIN] = 1;
+    modified.c_cc[VTIME] = 0;
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &modified);
+
+    char c;
+    int i = 0;
+    line = malloc(sizeof(char) * READLINE_BUFSIZE);
+    do {
+      fflush(stdout);
+      if(read(STDIN_FILENO, &c, 1) != 1) {
+        break;
+      } 
+      line[i] = c;
+      i++;
+      if(write(STDOUT_FILENO, &c, 1) != 1) {
+        break;
+      } 
+    } while(c != '\n');
+    line[i] = '\0';
+
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
+
+  } else {
+    if(getline(&line, &line_size, stdin) == -1) {
+      return NULL;
+    }
+  } 
   return line;
 }
 
