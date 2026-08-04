@@ -7,27 +7,60 @@
 #define READLINE_BUFSIZE 128
 #define DIRNAME_SIZE 128
 
-// handle line buffer and output
-int process_input(char c, char *line, int *i) {
-  switch(c) {
-    // EOF
-    case 0x04:
-      return 1;
+enum input_state {
+  INPUT_NORMAL,
+  INPUT_ESCAPE,
+  INPUT_CSI,
+};
 
-    // backspace
-    case 0x7f:
-      if(*i == 0) break;
-      write(STDOUT_FILENO, "\b \b", 3);
-      (*i)--;
-      line[*i] = '\0';
+// handle line buffer and output
+int process_input(unsigned char c, char *line, int *i) {
+  static enum input_state state = INPUT_NORMAL;
+  switch(state) {
+    case INPUT_NORMAL:
+      switch(c) {
+        // EOF
+        case 0x04:
+          return 1;
+
+        // backspace
+        case 0x7f:
+          if(*i == 0) break;
+          write(STDOUT_FILENO, "\b \b", 3);
+          (*i)--;
+          line[*i] = '\0';
+          break;
+
+        // ESC
+        case 0x1b:
+          state = INPUT_ESCAPE;
+          break;
+
+        default:
+          line[*i] = c;
+          (*i)++;
+          write(STDOUT_FILENO, &c, 1);
+          break;
+      } 
+      break;
+
+    case INPUT_ESCAPE:
+      if(c == '[') {
+        state = INPUT_CSI;
+      } else {
+        state = INPUT_NORMAL;
+      }
+      break;
+
+    case INPUT_CSI:
+      if(c >= 0x40 && c <= 0x7f) {
+        state = INPUT_NORMAL;
+      }
       break;
 
     default:
-      line[*i] = c;
-      (*i)++;
-      write(STDOUT_FILENO, &c, 1);
-      break;
-  } 
+      return 1;
+  }
   fflush(stdout);
   return 0;
 } 
@@ -48,7 +81,7 @@ char *read_line() {
     modified.c_cc[VTIME] = 0;
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &modified);
 
-    char c;
+    unsigned char c;
     int i = 0;
     line = malloc(sizeof(char) * READLINE_BUFSIZE);
     do {
