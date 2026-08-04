@@ -9,14 +9,25 @@
 
 // handle line buffer and output
 int process_input(char c, char *line, int *i) {
-  if(c == 0x04) {
-    return 1;
-  }
-  line[*i] = c;
-  (*i)++;
-  if(write(STDOUT_FILENO, &c, 1) != 1) {
-    return 1;
-  }
+  switch(c) {
+    // EOF
+    case 0x04:
+      return 1;
+
+    // backspace
+    case 0x7f:
+      if(*i == 0) break;
+      write(STDOUT_FILENO, "\b \b", 3);
+      (*i)--;
+      line[*i] = '\0';
+      break;
+
+    default:
+      line[*i] = c;
+      (*i)++;
+      write(STDOUT_FILENO, &c, 1);
+      break;
+  } 
   fflush(stdout);
   return 0;
 } 
