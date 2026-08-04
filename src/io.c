@@ -8,13 +8,17 @@
 #define DIRNAME_SIZE 128
 
 // handle line buffer and output
-void process_input(char c, char *line, int *i) {
+int process_input(char c, char *line, int *i) {
+  if(c == 0x04) {
+    return 1;
+  }
   line[*i] = c;
   (*i)++;
   if(write(STDOUT_FILENO, &c, 1) != 1) {
-    return;
-  } 
+    return 1;
+  }
   fflush(stdout);
+  return 0;
 } 
 
 char *read_line() {
@@ -40,18 +44,23 @@ char *read_line() {
       if(read(STDIN_FILENO, &c, 1) != 1) {
         break;
       }
-      process_input(c, line, &i);
+      if(process_input(c, line, &i) == 1) {
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
+        free(line);
+        return NULL;
+      }
     } while(c != '\n');
     line[i] = '\0';
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
+    return line;
 
   } else {
     if(getline(&line, &line_size, stdin) == -1) {
       return NULL;
     }
+    return line;
   } 
-  return line;
 }
 
 // print prompt with $HOME
