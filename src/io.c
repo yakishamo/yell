@@ -4,40 +4,102 @@
 #include <unistd.h>
 #include <termios.h>
 
+#include "wrap_malloc.h"
+
 #define READLINE_BUFSIZE 128
 #define DIRNAME_SIZE 128
 
-// handle line buffer and output
-int process_input(char c, char *line, int *i) {
-  switch(c) {
-    // EOF
-    case 0x04:
-      return 1;
+enum input_state {
+  INPUT_NORMAL,
+  INPUT_ESCAPE,
+  INPUT_CSI,
+};
 
-    // backspace
-    case 0x7f:
-      if(*i == 0) break;
-      write(STDOUT_FILENO, "\b \b", 3);
-      (*i)--;
-      line[*i] = '\0';
+struct line_buffer {
+  char *line;
+  int capacity;
+  int i;
+};
+
+static void init_line_buffer(struct line_buffer *lb) {
+  lb->line = xmalloc(sizeof(char) * READLINE_BUFSIZE);
+  lb->capacity = READLINE_BUFSIZE;
+  lb->i = 0;
+} 
+
+static void add_char(struct line_buffer *lb, unsigned char c) {
+  if(lb->capacity == lb->i) {
+    lb->capacity += READLINE_BUFSIZE;
+    xrealloc(lb->line, lb->capacity);
+  }
+  lb->line[lb->i] = c;
+  lb->i++;
+}
+
+static int del_char(struct line_buffer *lb) {
+  if(!lb->line) return 0;
+  if(lb->i == 0) return 0;
+  lb->i--;
+  lb->line[lb->i] = '\0';
+  return 1;
+}
+
+// handle line buffer and output
+static int process_input(unsigned char c, struct line_buffer *lb) {
+  static enum input_state state = INPUT_NORMAL;
+  switch(state) {
+    case INPUT_NORMAL:
+      switch(c) {
+        // EOF
+        case 0x04:
+          return 1;
+
+        // backspace
+        case 0x7f:
+          if(del_char(lb) == 1)
+            write(STDOUT_FILENO, "\b \b", 3);
+          break;
+
+        // ESC
+        case 0x1b:
+          state = INPUT_ESCAPE;
+          break;
+
+        default:
+          add_char(lb, c);
+          write(STDOUT_FILENO, &c, 1);
+          break;
+      } 
+      break;
+
+    case INPUT_ESCAPE:
+      if(c == '[') {
+        state = INPUT_CSI;
+      } else {
+        state = INPUT_NORMAL;
+      }
+      break;
+
+    case INPUT_CSI:
+      if(c >= 0x40 && c <= 0x7f) {
+        state = INPUT_NORMAL;
+      }
       break;
 
     default:
-      line[*i] = c;
-      (*i)++;
-      write(STDOUT_FILENO, &c, 1);
-      break;
-  } 
+      return 1;
+  }
   fflush(stdout);
   return 0;
 } 
 
 char *read_line() {
-  char *line = NULL;
-  size_t line_size = 0;
   if(isatty(STDIN_FILENO)) {
+    struct line_buffer lb;
     struct termios original;
     struct termios modified;
+
+    init_line_buffer(&lb);
 
     tcgetattr(STDIN_FILENO, &original);
     modified = original;
@@ -48,25 +110,25 @@ char *read_line() {
     modified.c_cc[VTIME] = 0;
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &modified);
 
-    char c;
-    int i = 0;
-    line = malloc(sizeof(char) * READLINE_BUFSIZE);
+    unsigned char c;
     do {
       if(read(STDIN_FILENO, &c, 1) != 1) {
         break;
       }
-      if(process_input(c, line, &i) == 1) {
+      if(process_input(c, &lb) == 1) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
-        free(line);
+        free(lb.line);
         return NULL;
       }
     } while(c != '\n');
-    line[i] = '\0';
+    add_char(&lb, '\0');
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
-    return line;
+    return lb.line;
 
   } else {
+    char *line = NULL;
+    size_t line_size = 0;
     if(getline(&line, &line_size, stdin) == -1) {
       return NULL;
     }
@@ -101,7 +163,7 @@ static FILE *open_history() {
   int history_len = strlen(HISTORY_FILENAME);
 
   // $HOME + '/' + HISTORY_FILESIZE + '\0'
-  char *file_name = malloc(sizeof(char)*(home_len+1+history_len+1));
+  char *file_name = xmalloc(sizeof(char)*(home_len+1+history_len+1));
   strcpy(file_name, home_dir);
   strcat(file_name, "/");
   strcat(file_name, HISTORY_FILENAME);
