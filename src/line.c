@@ -33,25 +33,28 @@ int lb_add_char(line_buffer lb, unsigned char c) {
   if(lb->capacity == lb->line_size) {
     lb_realloc(lb);
   }
-  if(lb->line_size == lb->cursor) {
-    lb->line[lb->cursor] = c;
-    lb->cursor++;
-    lb->line_size++;
-    return 1;
-  }
-  return 0;
+  memmove(
+      lb->line + lb->cursor + 1,
+      lb->line + lb->cursor,
+      (size_t)(lb->line_size - lb->cursor)
+    );
+  lb->line[lb->cursor] = (char)c;
+  lb->cursor++;
+  lb->line_size++;
+  return 1;
 }
 
 // returns num of char deleted
 int lb_del_char(line_buffer lb) {
   if(lb->cursor == 0) return 0;
-  if(lb->line_size == lb->cursor) {
-    lb->cursor--;
-    lb->line_size--;
-    lb->line[lb->cursor] = '\0';
-    return 1;
-  }
-  return 0;
+  memmove(
+      lb->line + lb->cursor -1,
+      lb->line + lb->cursor,
+      (size_t)(lb->line_size - lb->cursor)
+    );
+  lb->cursor--;
+  lb->line_size--;
+  return 1;
 }
 
 int lb_move_cursor(line_buffer lb, int offset) {
