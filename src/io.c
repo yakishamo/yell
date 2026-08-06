@@ -89,8 +89,6 @@ char *read_line() {
       }
       if(process_input(c, lb) == 1) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
-        char *line = lb_get_line(lb);
-        free(line);
         lb_free(&lb);
         return NULL;
       }
@@ -98,7 +96,7 @@ char *read_line() {
     lb_add_char(lb, '\0');
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
-    return lb_get_line(lb);
+    return lb_release(&lb);
 
   } else {
     char *line = NULL;
