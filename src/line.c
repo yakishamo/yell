@@ -75,6 +75,14 @@ char *lb_get_line(line_buffer lb) {
   return lb->line;
 }
 
+int lb_get_cursor(line_buffer lb) {
+  return lb->cursor;
+}
+
+int lb_get_line_size(line_buffer lb) {
+  return lb->line_size;
+}
+
 char *lb_release(line_buffer *lb) {
   char *line = (*lb)->line;
   free(*lb);
