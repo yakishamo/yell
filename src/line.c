@@ -9,14 +9,16 @@
 struct line_buffer {
   char *line;
   int capacity;
-  int i;
+  int line_size;
+  int cursor;
 };
 
 void lb_init(line_buffer *lb) {
   *lb = xmalloc(sizeof(struct line_buffer));
   (*lb)->line = xmalloc(sizeof(char) * LINE_SIZE);
   (*lb)->capacity = LINE_SIZE;
-  (*lb)->i = 0;
+  (*lb)->line_size = 0;
+  (*lb)->cursor = 0;
 }
 
 void lb_realloc(line_buffer lb) {
@@ -26,19 +28,19 @@ void lb_realloc(line_buffer lb) {
 
 // returns num of char added
 int lb_add_char(line_buffer lb, unsigned char c) {
-  if(lb->capacity == lb->i) {
+  if(lb->capacity == lb->line_size) {
     lb_realloc(lb);
   }
-  lb->line[lb->i] = c;
-  lb->i++;
+  lb->line[lb->cursor] = c;
+  lb->cursor++;
   return 1;
 }
 
 // returns num of char deleted
 int lb_del_char(line_buffer lb) {
-  if(lb->i == 0) return 0;
-  lb->i--;
-  lb->line[lb->i] = '\0';
+  if(lb->cursor == 0) return 0;
+  lb->cursor--;
+  lb->line[lb->cursor] = '\0';
   return 1;
 }
 
