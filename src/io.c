@@ -5,6 +5,7 @@
 #include <termios.h>
 
 #include "wrap_malloc.h"
+#include "line.h"
 
 #define READLINE_BUFSIZE 128
 #define DIRNAME_SIZE 128
@@ -15,37 +16,8 @@ enum input_state {
   INPUT_CSI,
 };
 
-struct line_buffer {
-  char *line;
-  int capacity;
-  int i;
-};
-
-static void init_line_buffer(struct line_buffer *lb) {
-  lb->line = xmalloc(sizeof(char) * READLINE_BUFSIZE);
-  lb->capacity = READLINE_BUFSIZE;
-  lb->i = 0;
-} 
-
-static void add_char(struct line_buffer *lb, unsigned char c) {
-  if(lb->capacity == lb->i) {
-    lb->capacity += READLINE_BUFSIZE;
-    xrealloc(lb->line, lb->capacity);
-  }
-  lb->line[lb->i] = c;
-  lb->i++;
-}
-
-static int del_char(struct line_buffer *lb) {
-  if(!lb->line) return 0;
-  if(lb->i == 0) return 0;
-  lb->i--;
-  lb->line[lb->i] = '\0';
-  return 1;
-}
-
 // handle line buffer and output
-static int process_input(unsigned char c, struct line_buffer *lb) {
+static int process_input(unsigned char c, line_buffer lb) {
   static enum input_state state = INPUT_NORMAL;
   switch(state) {
     case INPUT_NORMAL:
@@ -56,7 +28,7 @@ static int process_input(unsigned char c, struct line_buffer *lb) {
 
         // backspace
         case 0x7f:
-          if(del_char(lb) == 1)
+          if(lb_del_char(lb) == 1)
             write(STDOUT_FILENO, "\b \b", 3);
           break;
 
@@ -66,7 +38,7 @@ static int process_input(unsigned char c, struct line_buffer *lb) {
           break;
 
         default:
-          add_char(lb, c);
+          lb_add_char(lb, c);
           write(STDOUT_FILENO, &c, 1);
           break;
       } 
@@ -95,11 +67,11 @@ static int process_input(unsigned char c, struct line_buffer *lb) {
 
 char *read_line() {
   if(isatty(STDIN_FILENO)) {
-    struct line_buffer lb;
+    line_buffer lb;
     struct termios original;
     struct termios modified;
 
-    init_line_buffer(&lb);
+    lb_init(&lb);
 
     tcgetattr(STDIN_FILENO, &original);
     modified = original;
@@ -115,16 +87,18 @@ char *read_line() {
       if(read(STDIN_FILENO, &c, 1) != 1) {
         break;
       }
-      if(process_input(c, &lb) == 1) {
+      if(process_input(c, lb) == 1) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
-        free(lb.line);
+        char *line = lb_get_line(lb);
+        free(line);
+        lb_free(&lb);
         return NULL;
       }
     } while(c != '\n');
-    add_char(&lb, '\0');
+    lb_add_char(lb, '\0');
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &original);
-    return lb.line;
+    return lb_get_line(lb);
 
   } else {
     char *line = NULL;
