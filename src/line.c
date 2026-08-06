@@ -3,6 +3,7 @@
 
 #include "line.h"
 #include "wrap_malloc.h"
+#include "macros.h"
 
 #define LINE_SIZE 128
 
@@ -16,6 +17,7 @@ struct line_buffer {
 void lb_init(line_buffer *lb) {
   *lb = xmalloc(sizeof(struct line_buffer));
   (*lb)->line = xmalloc(sizeof(char) * LINE_SIZE);
+  (*lb)->line[0] = '\0';
   (*lb)->capacity = LINE_SIZE;
   (*lb)->line_size = 0;
   (*lb)->cursor = 0;
@@ -42,6 +44,20 @@ int lb_del_char(line_buffer lb) {
   lb->cursor--;
   lb->line[lb->cursor] = '\0';
   return 1;
+}
+
+int lb_move_cursor(line_buffer lb, int offset) {
+  if(offset == 0) {
+    return 0;
+  } else if (offset > 0) {
+    int move = MIN(lb->line_size - lb->cursor, offset);
+    lb->cursor += move;
+    return move;
+  } else if (offset < 0) {
+    int move = MAX(-lb->cursor, offset);
+    lb->cursor += move;
+  }
+  return 0; // never reach
 }
 
 char *lb_get_line(line_buffer lb) {
