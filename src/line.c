@@ -48,7 +48,7 @@ int lb_add_char(line_buffer lb, unsigned char c) {
 int lb_del_char(line_buffer lb) {
   if(lb->cursor == 0) return 0;
   memmove(
-      lb->line + lb->cursor -1,
+      lb->line + lb->cursor - 1,
       lb->line + lb->cursor,
       (size_t)(lb->line_size - lb->cursor)
     );
