@@ -17,7 +17,6 @@ struct line_buffer {
 void lb_init(line_buffer *lb) {
   *lb = xmalloc(sizeof(struct line_buffer));
   (*lb)->line = xmalloc(sizeof(char) * LINE_SIZE);
-  (*lb)->line[0] = '\0';
   (*lb)->capacity = LINE_SIZE;
   (*lb)->line_size = 0;
   (*lb)->cursor = 0;
@@ -67,6 +66,7 @@ int lb_move_cursor(line_buffer lb, int offset) {
   } else if (offset < 0) {
     int move = MAX(-lb->cursor, offset);
     lb->cursor += move;
+    return move;
   }
   return 0; // never reach
 }
@@ -75,6 +75,18 @@ char *lb_get_line(line_buffer lb) {
   return lb->line;
 }
 
-void lb_free(line_buffer *lb) {
+char *lb_release(line_buffer *lb) {
+  char *line = (*lb)->line;
   free(*lb);
+  *lb = NULL;
+  return line;
+}
+
+void lb_free(line_buffer *lb) {
+  if(lb == NULL || *lb == NULL) {
+    return;
+  }
+  free((*lb)->line);
+  free(*lb);
+  *lb = NULL;
 } 
